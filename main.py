@@ -79,21 +79,22 @@ user_data = {}
 @app.on_message(filters.command("start"))
 def start(client, message):
     chat_id = message.chat.id
-    user_data[chat_id] = {"fase": "nome"}  # Reset per iniziare da capo
+    user_data[chat_id] = {"fase": "nome"}
     message.reply(
         "✨ Ciao MANIFESTER ✨\n\n"
-        "Come ti chiami? Scrivilo qui sotto per iniziare il tuo percorso numerologico!!"
+        "Come ti chiami? Scrivilo qui sotto per iniziare il tuo percorso numerologico 💫"
     )
+
 # === GESTIONE NOME + DATA ===
 @app.on_message(filters.text & ~filters.command("start"))
-def get_data(client, message):
+def gestisci_percorso(client, message):
     chat_id = message.chat.id
     text = message.text.strip()
 
     if chat_id not in user_data:
         user_data[chat_id] = {"fase": "nome"}
 
-    fase = user_data[chat_id].get("fase")
+    fase = user_data[chat_id]["fase"]
 
     if fase == "nome":
         user_data[chat_id]["nome"] = text
@@ -101,7 +102,7 @@ def get_data(client, message):
         message.reply(f"Grazie {text} 💖\n\nOra dimmi la tua **data di nascita** nel formato GG/MM/AAAA")
         return
 
-    elif fase == "data":
+    if fase == "data":
         try:
             giorno, mese, anno = map(int, text.split("/"))
             anno_corrente = datetime.today().year
@@ -121,17 +122,16 @@ def get_data(client, message):
                 chat_id,
                 "Ora che hai scoperto il numero del tuo anno personale 🌟 "
                 "che va dal tuo compleanno 2025 al 2026...\n\n"
-                "💖Andiamo più in profondità… Sei pronta per scoprire cosa ti riserverà quest’anno nella sfera dell’AMORE E DELLE RELAZIONI?",
+                "💖 Sei pronta per scoprire cosa ti riserverà quest’anno nella sfera dell’AMORE E DELLE RELAZIONI?",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("💖 Sì, sono pronta!", callback_data="amore")]
                 ])
             )
-        except Exception:
+        except:
             message.reply("❗️Formato non valido. Inserisci la data così: GG/MM/AAAA (es. 14/08/1991)")
         return
 
-    else:
-        message.reply("🌀 Hai già inserito tutto. Se vuoi ricominciare, premi /start 🌈")
+    message.reply("🌀 Hai già inserito tutto. Se vuoi ricominciare, premi /start 🌈")
 
 # === BOTTONI: RISPOSTE DETTAGLIATE ===
 @app.on_callback_query()
