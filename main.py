@@ -95,22 +95,23 @@ def start(client, message):
 
 # === GESTIONE NOME + DATA ===
 @app.on_message(filters.text & ~filters.command("start"))
-def gestisci_percorso(client, message):
-    chat_id = message.chat.id
+def get_data(client, message):
+    chat_id = str(message.chat.id)
     text = message.text.strip()
 
     if chat_id not in user_data:
-        user_data[chat_id] = {"fase": "nome"}
+        return  # ignora messaggi da utenti che non hanno fatto /start
 
-    fase = user_data[chat_id]["fase"]
+    fase = user_data[chat_id].get("fase")
 
     if fase == "nome":
         user_data[chat_id]["nome"] = text
         user_data[chat_id]["fase"] = "data"
-        message.reply(f"Grazie {text} 💖\n\nOra dimmi la tua **data di nascita** nel formato GG/MM/AAAA")
+        save_data()
+        message.reply(f"Grazie ✨ Ciao {text.upper()} ✨\n\nOra dimmi la tua **data di nascita** nel formato GG/MM/AAAA")
         return
 
-    if fase == "data":
+    elif fase == "data":
         try:
             giorno, mese, anno = map(int, text.split("/"))
             anno_corrente = datetime.today().year
@@ -118,6 +119,7 @@ def gestisci_percorso(client, message):
             user_data[chat_id]["data"] = text
             user_data[chat_id]["numero"] = str(numero)
             user_data[chat_id]["fase"] = "completato"
+            save_data()
 
             client.send_video(chat_id, f"{numero}.mp4")
 
@@ -130,16 +132,18 @@ def gestisci_percorso(client, message):
                 chat_id,
                 "Ora che hai scoperto il numero del tuo anno personale 🌟 "
                 "che va dal tuo compleanno 2025 al 2026...\n\n"
-                "💖 Sei pronta per scoprire cosa ti riserverà quest’anno nella sfera dell’AMORE E DELLE RELAZIONI?",
+                "💖Andiamo più in profondità… Sei pronta per scoprire cosa ti riserverà quest’anno nella sfera dell’AMORE E DELLE RELAZIONI?",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("💖 Sì, sono pronta!", callback_data="amore")]
                 ])
             )
-        except:
+        except Exception:
             message.reply("❗️Formato non valido. Inserisci la data così: GG/MM/AAAA (es. 14/08/1991)")
         return
 
-    message.reply("🌀 Hai già inserito tutto. Se vuoi ricominciare, premi /start 🌈")
+    elif fase == "completato":
+        # Blocco ulteriore spam
+        return
 
 # === BOTTONI: RISPOSTE DETTAGLIATE ===
 @app.on_callback_query()
