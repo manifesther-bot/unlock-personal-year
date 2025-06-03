@@ -77,6 +77,22 @@ user_data = {}
 
 # === /START: BENVENUTO ===
 from datetime import datetime, timedelta
+import json
+import os
+
+USERDATA_FILE = "user_data.json"
+
+# Carica dati utente da file se esiste
+if os.path.exists(USERDATA_FILE):
+    with open(USERDATA_FILE, "r") as f:
+        user_data = json.load(f)
+else:
+    user_data = {}
+
+# Salva i dati ogni volta che vengono modificati
+def save_data():
+    with open(USERDATA_FILE, "w") as f:
+        json.dump(user_data, f)
 
 @app.on_message(filters.command("start"))
 def start(client, message):
