@@ -76,13 +76,21 @@ consulti = {
 user_data = {}
 
 # === /START: BENVENUTO ===
+from datetime import datetime, timedelta
+
 @app.on_message(filters.command("start"))
 def start(client, message):
-    chat_id = message.chat.id
-    user_data[chat_id] = {"fase": "nome"}
+    chat_id = str(message.chat.id)
+    user_data[chat_id] = {
+        "fase": "nome",
+        "start_time": datetime.now().isoformat(),
+        "followup1_sent": False,
+        "followup2_sent": False
+    }
+    save_data()
     message.reply(
         "✨ Ciao MANIFESTER ✨\n\n"
-        "Come ti chiami? Scrivilo qui sotto per iniziare il tuo percorso numerologico 💫"
+        "Come ti chiami? Scrivilo qui sotto per iniziare il tuo percorso numerologico!! 💖"
     )
 
 # === GESTIONE NOME + DATA ===
@@ -214,38 +222,51 @@ def riduci(n):
         n = sum(int(c) for c in str(n))
     return n
 
-# === FOLLOW-UP: MESSAGGI PROGRAMMATI ===
-def invia_followup_1():
-    for chat_id in user_data:
-        app.send_message(
-            chat_id,
-            "🕰 È passato un giorno… ma l’energia del tuo Anno Personale è ancora qui.\n"
-            "Forse hai già iniziato a sentire certe vibrazioni dentro di te…\n\n"
-            "✨ Se senti che questo è il momento giusto per chiarire, allinearti e manifestare…\n\n"
-            "📚 La Lettura Numerologica Completa è ancora disponibile per te.\n"
-            "⚠️ *I posti sono limitati e la scorsa volta è andata sold out in soli 2 giorni!*\n\n"
-            "🔓 Accedi subito alla guida personalizzata:\n"
-            "https://6786deff92dd1.site123.me/"
-        )
+# === FOLLOW-UP: MESSAGGI PROGRAMMATI (24h e 48h) ===
+def controlla_followup():
+    now = datetime.now()
+    
+    for chat_id, dati in user_data.items():
+        start_time_str = dati.get("start_time")
+        if not start_time_str:
+            continue  # ⛔️ Se non c'è un timestamp di inizio, salta
 
-def invia_followup_2():
-    for chat_id in user_data:
-        app.send_photo(
-            chat_id,
-            photo="testimonianza.jpg",
-            caption=(
-                "📬 Ecco una delle testimonianze che abbiamo ricevuto sulla Lettura Personal Year:\n\n"
-                "_\"Questa guida è stata una rivelazione. Ogni parola sembrava parlarmi direttamente, "
-                "come se sapesse esattamente dove mi trovo nella vita!\"_\n\n"
-                "💫 Se ancora non hai scaricato la tua copia personalizzata, il momento è adesso.\n\n"
-                "🔓 Accedi subito alla guida:\n"
+        start_time = datetime.fromisoformat(start_time_str)
+        elapsed = now - start_time
+
+        # ⏰ DOPO 24 ORE - Primo follow-up (testo)
+        if elapsed > timedelta(hours=24) and not dati.get("followup1_sent"):
+            app.send_message(
+                chat_id,
+                "🕰 È passato un giorno… ma l’energia del tuo Anno Personale è ancora qui.\n"
+                "Forse hai già iniziato a sentire certe vibrazioni dentro di te…\n\n"
+                "✨ Se senti che questo è il momento giusto per chiarire, allinearti e manifestare…\n\n"
+                "📚 La Lettura Numerologica Completa è ancora disponibile per te.\n"
+                "⚠️ *I posti sono limitati e la scorsa volta è andata sold out in soli 2 giorni!*\n\n"
+                "🔓 Accedi subito alla guida personalizzata:\n"
                 "https://6786deff92dd1.site123.me/"
             )
-        )
+            dati["followup1_sent"] = True
+            save_data()
 
+        # ⏳ DOPO 48 ORE - Secondo follow-up (con immagine)
+        elif elapsed > timedelta(hours=48) and not dati.get("followup2_sent"):
+            app.send_photo(
+                chat_id,
+                photo="testimonianza.jpg",
+                caption=(
+                    "📬 Ecco una delle testimonianze che abbiamo ricevuto sulla Lettura Personal Year:\n\n"
+                    "_\"Io sono sbalordita. Sto sfruttando l'energia del mio anno personale "
+                    "e ho inziato a realizzare manifestazione della mia Vision Board!\"_\n\n"
+                    "💫 Se ancora non hai scaricato la tua copia personalizzata, il momento è adesso.\n\n"
+                    "🔓 Accedi subito alla guida:\n"
+                    "https://6786deff92dd1.site123.me/"
+                )
+            )
+            dati["followup2_sent"] = True
+            save_data()
 # Programmazione messaggi
-scheduler.add_job(invia_followup_1, "interval", hours=24, id="followup1")
-scheduler.add_job(invia_followup_2, "interval", hours=48, id="followup2")
+scheduler.add_job(controlla_followup, "interval", minutes=10)
 
 # === AVVIO BOT ===
 from keep_alive import keep_alive
